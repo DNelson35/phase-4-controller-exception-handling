@@ -1,5 +1,6 @@
 class BirdsController < ApplicationController
-
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
+  
   # GET /birds
   def index
     birds = Bird.all
@@ -14,51 +15,47 @@ class BirdsController < ApplicationController
 
   # GET /birds/:id
   def show
-    bird = Bird.find_by(id: params[:id])
-    if bird
-      render json: bird
-    else
-      render json: { error: "Bird not found" }, status: :not_found
-    end
+    bird = find_bird
+    render json: bird
   end
 
   # PATCH /birds/:id
   def update
-    bird = Bird.find_by(id: params[:id])
-    if bird
-      bird.update(bird_params)
-      render json: bird
-    else
-      render json: { error: "Bird not found" }, status: :not_found
-    end
+    bird = find_bird
+    
+    bird.update(bird_params)
+    render json: bird
   end
 
   # PATCH /birds/:id/like
   def increment_likes
-    bird = Bird.find_by(id: params[:id])
-    if bird
-      bird.update(likes: bird.likes + 1)
-      render json: bird
-    else
-      render json: { error: "Bird not found" }, status: :not_found
-    end
+    bird = find_bird
+    bird.update(likes: bird.likes + 1)
+    render json: bird
   end
 
   # DELETE /birds/:id
   def destroy
-    bird = Bird.find_by(id: params[:id])
-    if bird
-      bird.destroy
-      head :no_content
-    else
-      render json: { error: "Bird not found" }, status: :not_found
-    end
+    bird = find_bird
+    bird.destroy
+    head :no_content
+    # how to handle execpitons without it being handled at the top
+  # rescue ActiveRecord::RecordNotFound
+  #   render_not_found
   end
 
   private
 
   def bird_params
     params.permit(:name, :species, :likes)
+  end
+
+  def render_not_found
+    render json: { error: "Bird not found" }, status: :not_found
+  end
+
+  def find_bird
+    Bird.find(params[:id])
   end
 
 end
